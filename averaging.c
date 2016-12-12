@@ -55,7 +55,7 @@ void read_averaging_file(Tcl_Interp *interp, Sim_info *sim, Ave_elem **aveptr, d
 {
 	FILE *fp;
 	char fname[256], name[256], line[MAXLINELEN], buf[8], *sptr;
-        const char **parsv;
+	const char **parsv;
 	Tcl_Obj *obj, **objv;
 	int i, j, k, N, N_from, N_to, Nlines;
 	Ave_elem *ave;
