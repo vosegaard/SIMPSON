@@ -45,6 +45,13 @@ if (GSL_FOUND)
   add_definitions (-DGSL)
 endif ()
 
+if (UNIX)
+  add_definitions (-DUNIX)
+endif (UNIX)
+if (WIN32)
+  add_definitions (-DWIN32)
+endif (WIN32)
+
 #
 # Simpson executable
 #
@@ -86,7 +93,7 @@ add_executable (SIMPSON
 target_link_libraries (SIMPSON m )
 target_link_libraries (SIMPSON ${TCL_LIBRARY})
 target_link_libraries (SIMPSON ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
-target_link_libraries (SIMPSON ${GSL_LIBRARY})
+target_link_libraries (SIMPSON ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
 target_link_libraries (SIMPSON ${FFTW3_LIBRARIES})
 target_link_libraries (SIMPSON ${NFFT3_LIBRARIES})
 add_dependencies (SIMPSON nfft3)
