@@ -1453,7 +1453,7 @@ void simpson_mpi_slave(Tcl_Interp *interp)
 		free_complx_vector(fidsum);
 		if (OCpar.isinit && OCpar.gradmode) {
 			assert(phivals != NULL);
-			MPI_Send(phivals, 2*(LEN(phival)+1), MPI_DOUBLE, 0, 999, MPI_COMM_WORLD);
+			MPI_Send(phivals, 2*(LEN(phivals)+1), MPI_DOUBLE, 0, 999, MPI_COMM_WORLD);
 			free_complx_vector(phivals);
 		}
 		free(state);

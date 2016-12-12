@@ -241,7 +241,7 @@ void test_pulseq_for_acqOC_prop(Tcl_Interp *interp)
      
   //printf("test_pulseq_for_acqOC_prop:\n%s\n---\n",buf);
 
-  res = Tcl_GetStringResult(interp);
+  res = (char *)Tcl_GetStringResult(interp);
   //printf("%s\n///\n",res);
 
   lin = my_strtok_r(res,"\n",&chptr);
