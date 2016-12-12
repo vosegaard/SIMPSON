@@ -33,6 +33,13 @@ set (NFFT3_INCLUDE_DIRS "${install_dir}/include")
 set (NFFT3_LIBRARIES "${install_dir}/lib/libnfft3.a")
 include_directories ("${NFFT3_INCLUDE_DIRS}")
 
+if (UNIX)
+  add_definitions (-DUNIX)
+endif (UNIX)
+if (WIN32)
+  add_definitions (-DWIN32)
+endif (WIN32)
+
 add_executable (SIMPSON
   allocation.c
   auxmath.c
