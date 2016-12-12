@@ -12,19 +12,26 @@ endif (NOT CMAKE_BUILD_TYPE)
 project (SIMPSON C)
 
 find_package (BLAS REQUIRED)
+find_package (LAPACK REQUIRED)
 find_package (TCL REQUIRED)
+find_package (Threads REQUIRED)
+find_package (GSL)
+
+#set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 
 # fftw3
 find_library (FFTW3_LIBRARIES fftw3)
 find_path (FFTW3_INCLUDE_DIRS "fftw3.h" PATH_SUFFIXES "fftw3")
 include_directories ("${FFTW3_INCLUDE_DIRS}")
+get_filename_component (FFTW3_LIB_DIR "${FFTW3_LIBRARIES}" DIRECTORY)
 
+# nfft3
 include (ExternalProject)
 ExternalProject_Add (nfft3
   PREFIX nfft3
   URL https://www-user.tu-chemnitz.de/~potts/nfft/download/nfft-3.3.2.tar.gz
-  URL_HASH MD5=550737c06f4d6ea6c156800169d8f0d9
-  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> --with-fftw3-libdir=/opt/local/lib --enable-all
+#  URL_HASH MD5=550737c06f4d6ea6c156800169d8f0d9
+  CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> --with-fftw3-libdir=${FFTW3_LIB_DIR} --enable-all
   BUILD_COMMAND make
   INSTALL_COMMAND make install
   )
@@ -33,6 +40,14 @@ set (NFFT3_INCLUDE_DIRS "${install_dir}/include")
 set (NFFT3_LIBRARIES "${install_dir}/lib/libnfft3.a")
 include_directories ("${NFFT3_INCLUDE_DIRS}")
 
+# GSL
+if (GSL_FOUND)
+  add_definitions (-DGSL)
+endif ()
+
+#
+# Simpson executable
+#
 add_executable (SIMPSON
   allocation.c
   auxmath.c
@@ -68,8 +83,16 @@ add_executable (SIMPSON
   tclutil.c
   wigner.c)
 
+target_link_libraries (SIMPSON m )
 target_link_libraries (SIMPSON ${TCL_LIBRARY})
-target_link_libraries (SIMPSON ${BLAS_Accelerate_LIBRARY})
+target_link_libraries (SIMPSON ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+target_link_libraries (SIMPSON ${GSL_LIBRARY})
 target_link_libraries (SIMPSON ${FFTW3_LIBRARIES})
 target_link_libraries (SIMPSON ${NFFT3_LIBRARIES})
 add_dependencies (SIMPSON nfft3)
+if (THREADS_HAVE_PTHREAD_ARG)
+  target_compile_options (PUBLIC SIMPSON "-pthread")
+endif()
+if (CMAKE_THREAD_LIBS_INIT)
+  target_link_libraries (SIMPSON "${CMAKE_THREAD_LIBS_INIT}")
+endif()
