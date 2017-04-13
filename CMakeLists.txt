@@ -109,3 +109,6 @@ endif()
 if (CMAKE_THREAD_LIBS_INIT)
   target_link_libraries (SIMPSON "${CMAKE_THREAD_LIBS_INIT}")
 endif()
+
+enable_testing ()
+add_subdirectory (examples)

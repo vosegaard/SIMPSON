@@ -1,0 +1,83 @@
+spinsys {
+  channels 13C
+  nuclei 13C
+  shift 1 0 4000 0.2 0 0 0
+}
+
+par {
+  variable index  1
+
+  method          gcompute
+  gamma_angles    16
+  spin_rate       1000
+  crystal_file    rep66
+  start_operator  I1x
+  detect_operator I1p
+  np              512
+  sw              gamma_angles*spin_rate
+  verbose         0
+  variable tsw    1e6/sw
+}
+
+proc pulseq {} {
+  delay 10000
+}
+
+proc progress {} {
+  global par
+  if ![info exists par(progress)] { set par(progress) -1 }
+  incr par(progress)
+  set str {"*   " \
+           " *  " \
+           "  * " \
+           "   *" \
+           "  * " \
+	   " *  "}
+  return [lindex $str [expr $par(progress)%6]]
+}
+
+lappend ::auto_path ./opt
+package require opt
+
+proc rms {{save 0}} {
+  global par
+  set f [fsimpson [list \
+    [list shift_1_iso $opt::iso] \
+    [list shift_1_aniso $opt::csa] \
+    [list shift_1_eta $opt::eta] \
+  ]]
+  faddlb $f $opt::lb 0
+  fzerofill $f 1024
+  fft $f
+  fautoscale $f $par(exp) -re
+  set rms [frms $f $par(exp) -re]
+  if {$save == 1} {
+	  puts [format " \[%s\]  %10.3f %10.3f %10.3f %10.3f" \
+	     FINAL $opt::csa $opt::eta $opt::lb $rms]
+    fsave $f $par(name),$par(index).spe
+  } else {
+	  puts -nonewline [format " \[%s\]  %10.3f %10.3f %10.3f %10.3f\015" \
+	     [progress] $opt::csa $opt::eta $opt::lb $rms]
+  }
+  flush stdout
+  funload $f
+  return $rms
+}
+
+proc main {} {
+  global par mn
+  set par(exp) [fload 7_Exp,1.spe]
+
+  opt::function rms
+  puts " Progress   csa       eta       lb          rms"
+	opt::newpar iso 0 1 -10 10
+	opt::newpar csa 3500 10 0 5000
+	opt::newpar eta 0.4 0.1 0 1
+	opt::newpar lb 150 10 0 300
+	
+	opt::scan iso
+	opt::minimize 1.0e-6
+	
+	rms 1
+	
+}
