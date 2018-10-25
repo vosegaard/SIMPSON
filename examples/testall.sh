@@ -1,35 +1,52 @@
 #!/bin/bash
 
+set -e
+numdiff="$1 -a 1e-10"
 fail=0
+
+# colors & names of the log levels
+# check if stdout is a terminal...
+if test -t 1; then
+    # see if it supports colors...
+    ncolors=$(tput colors)
+    if test -n "$ncolors" && test "$ncolors" -ge 8; then
+        normal="$(tput sgr0)"
+        bold="$(tput bold)"
+        red="$(tput setaf 1)"
+        green="$(tput setaf 2)"
+        yellow="$(tput setaf 3)"
+        cyan="$(tput setaf 6)"
+        white="$(tput setaf 7)"
+        magenta="$(tput setaf 5)"
+    fi
+fi
+
 for ex in *.in ; do
     base=${ex::-3}
-    echo "running ${base}"
-    ../SIMPSON $ex > ${base}.out
+    echo "---- running ${base} ----"
+    rm -f "${base}.out" "${base}*.spe" "${base}*.fid"
+    if ! ../SIMPSON $ex > "${base}.out" ; then
+        echo "${magenta}SIMPSON $ex failed!${normal}"
+        fail=1
+        continue
+    fi
     # if .spe output check if it matches the gold standard data
-    spe="${base},1.spe"
-    if [ -f $spe -a -f gold/$spe ]; then
-        if ! diff -q "$spe" "gold/$spe" &>/dev/null ; then
-            echo "${base} $spe differs from gold/$spe"
-            diff "$spe" "gold/$spe" > ${spe}.diff
-            fail=1
-        else
-            echo "${base} $spe matches gold/$spe"
-        fi
-    else
-        echo "gold/$spe not found for comparison"
-    fi
     # if .fid output check if it matches the gold standard data
-    fid="${base},1.fid"
-    if [ -f $fid -a -f gold/$fid ]; then
-        if ! diff -q "$fid" "gold/$fid" &>/dev/null ; then
-            echo "${base} $fid differs from gold/$fid"
-            diff "$fid" "gold/$fid" > ${fid}.diff
-            fail=1
+    files=$(shopt -s nullglob; echo ${base}*.spe ${base}*.fid)
+    for spe in $files ; do
+        if [ -f "$spe" -a -f "gold/$spe" ]; then
+            if ! $numdiff "$spe" "gold/$spe" &>/dev/null ; then
+                echo "${magenta}${base} $spe differs from gold/$spe"
+                echo " $numdiff $spe gold/$spe${normal}"
+                : $numdiff "$spe" "gold/$spe" > "${spe}.diff"
+                fail=1
+            else
+                echo "${base} $spe matches gold/$spe"
+            fi
         else
-            echo "${base} $fid matches gold/$fid"
+            echo "${red}gold/$spe not found for comparison${normal}"
         fi
-    else
-        echo "gold/$fid not found for comparison"
-    fi
+    done
 done
+echo "done testall.sh"
 exit $fail
