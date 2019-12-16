@@ -1,0 +1,63 @@
+spinsys {
+  channels 13C 15N
+  nuclei   13C 15N
+  dipole   1 2 895 10 20 30
+  shift    1 10p 100p 0.5 50 20 10
+}
+
+par {
+  variable index   1
+
+  np               32
+  spin_rate        10000
+  proton_frequency 400e6
+  start_operator   I1x
+  detect_operator  I1p
+  method           direct
+  crystal_file     rep66
+  gamma_angles     8
+  sw               spin_rate/2
+  variable tsw     1e6/sw
+  verbose          1101
+  variable tr      1e6/spin_rate
+  variable tr2     0.5e6/spin_rate
+  variable rf      50000
+  variable t180    0.5e6/rf
+}
+
+proc pulseq {} {
+  global par
+
+  reset
+  delay $par(tr2)
+  pulseid $par(t180) 0 0 $par(rf) x
+  delay $par(tr2)
+  pulseid $par(t180) 0 0 $par(rf) y
+  store 1
+
+  reset
+  acq
+  delay $par(tr2)
+  pulseid $par(t180) 0 x $par(rf) x
+  delay $par(tr2)
+  pulseid $par(t180) $par(rf) x 0 x
+  prop 1
+  store 2
+  acq
+
+  for {set i 2} {$i < $par(np)} {incr i} {
+    reset
+    prop 1
+    prop 2
+    prop 1
+    store 2
+    acq
+  }
+}
+
+proc main {} {
+  global par
+  
+  set f [fsimpson]
+  fsave $f $par(name),$par(index).fid
+}

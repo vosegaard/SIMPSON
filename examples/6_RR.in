@@ -1,0 +1,36 @@
+spinsys {
+  channels 13C
+  nuclei 13C 13C
+  shift 1  2000 6000 1 0 0 0
+  shift 2 -2000 6000 0 0 0 0
+  dipole 1 2 -1500 0 0 0
+}
+
+par {
+  spin_rate       4500
+  variable index  2 
+
+  method          gcompute
+  gamma_angles    20
+  sw              spin_rate*gamma_angles
+  np              4096
+  crystal_file    rep320
+  start_operator  Inx
+  detect_operator Inp
+  verbose         1101
+}
+
+proc pulseq {} {
+  maxdt 5.0
+  delay 1e6
+}
+
+proc main {} {
+  global par
+    set f [fsimpson]
+    faddlb $f 50 0
+    fft $f
+    fsave $f $par(name),$par(index).spe
+    funload $f
+  
+}

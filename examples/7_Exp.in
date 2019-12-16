@@ -1,0 +1,59 @@
+spinsys {
+  channels 13C
+  nuclei 13C
+  shift 1 0 4000 0.4 0 0 0
+}
+
+par {
+  variable index  1
+  variable noise  0.003
+
+  method          gcompute
+  gamma_angles    16
+  spin_rate       1000
+  crystal_file    rep66
+  start_operator  I1x
+  detect_operator I1p
+  np              512
+  sw              gamma_angles*spin_rate
+  verbose         1101
+  variable tsw    1e6/sw
+}
+
+proc pulseq {} {
+  delay 9999
+}
+
+proc grand {} {
+	# Generate gaussian noise
+	set s 2
+	while {$s >= 1} {
+		set v1 [expr 2.0*rand()-1.0]
+		set v2 [expr 2.0*rand()-1.0]
+		set s [expr $v1*$v1 + $v2*$v2]
+	}
+	if {$s != 0} {
+		set s [expr $v1*sqrt(-2.0*log($s)/$s)]
+	}
+	return $s
+}
+
+proc faddnoise {f {level 0.01}} {
+	for {set i 1} {$i <= [fget $f -np]} {incr i} {
+		set re [findex $f $i -re]
+		set im [findex $f $i -im]
+		fsetindex $f $i [expr $re + $level*[grand]] [expr $im + $level*[grand]]
+	}
+}
+
+proc main {} {
+  global par
+  set f [fsimpson]
+  faddlb $f 100 0
+  faddnoise $f $par(noise)
+  fphase $f -scale 2
+  fsave $f $par(name),$par(index).fid
+  fzerofill $f 1024
+  fft $f 
+  fsave $f $par(name),$par(index).spe
+}
